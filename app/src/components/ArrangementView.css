@@ -1,0 +1,46 @@
+/* ============================================================
+   ArrangementView — Container da timeline, réguas e lanes
+   ============================================================ */
+
+.arrangement-view {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-width: 0;
+  min-height: 0;
+}
+
+/* Container scrollável horizontal (tudo junto: header + régua + lanes + régua de tempo) */
+.arrangement-view__scroll-container {
+  position: relative;   /* âncora do Playhead absoluto */
+  display: flex;
+  flex-direction: column;
+  overflow-x: auto;
+  overflow-y: hidden;
+  flex: 1;
+  min-height: 0;
+}
+
+/* Zona fixa superior (section header + bar ruler) */
+.arrangement-view__top-rulers {
+  flex-shrink: 0;
+}
+
+/* Corpo das lanes (scroll vertical) */
+.arrangement-view__lanes {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  min-height: 0;
+}
+
+/* Container interno com largura total da timeline */
+.arrangement-view__lanes-inner {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Zona fixa inferior (time ruler) */
+.arrangement-view__bottom-ruler {
+  flex-shrink: 0;
+}

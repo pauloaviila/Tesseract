@@ -1,0 +1,156 @@
+/* ============================================================
+   TESSERACT ENGINE — Design System
+   Padrão visual: Future-Rough (industrial, escuro, preciso)
+   ============================================================ */
+
+/* --- Reset ------------------------------------------------- */
+*,
+*::before,
+*::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body, #root {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--text-primary);
+  background-color: var(--bg-root);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  user-select: none;
+}
+
+/* --- Tokens de Cor ----------------------------------------- */
+:root {
+  /* Fundos */
+  --bg-root:        #121215;
+  --bg-surface:     #1a1a1e;
+  --bg-panel:       #1e1e23;
+  --bg-lane:        #18181c;
+  --bg-lane-alt:    #1c1c21;
+  --bg-transport:   #0e0e11;
+  --bg-header:      #141418;
+  --bg-ruler:       #111114;
+
+  /* Bordas */
+  --border-subtle:  #2a2a32;
+  --border-strong:  #3a3a44;
+  --border-grid:    rgba(255, 255, 255, 0.04);
+  --border-beat:    rgba(255, 255, 255, 0.07);
+  --border-bar:     rgba(255, 255, 255, 0.12);
+
+  /* Texto */
+  --text-primary:   #e2e2e8;
+  --text-secondary: #72727e;
+  --text-muted:     #4a4a56;
+  --text-mono:      'JetBrains Mono', 'Consolas', monospace;
+
+  /* Cores de Track (por instrumento) */
+  --accent-kick:    #ff3b5c;
+  --accent-snare:   #ff6b35;
+  --accent-hihat:   #ffd23f;
+  --accent-bass:    #06d6a0;
+  --accent-synth:   #118ab2;
+  --accent-pad:     #7b2d8e;
+  --accent-fx:      #00e5ff;
+  --accent-vox:     #ff80ab;
+
+  /* Cores de Seção (arranjo) */
+  --section-intro:   #1a3a2e;
+  --section-verse:   #1e2a42;
+  --section-chorus:  #3a1e3a;
+  --section-bridge:  #2a3a1e;
+  --section-outro:   #3a2a1e;
+
+  /* Interações */
+  --hover-overlay:  rgba(255, 255, 255, 0.04);
+  --active-overlay: rgba(255, 255, 255, 0.08);
+  --focus-ring:     rgba(0, 229, 255, 0.4);
+
+  /* Layout */
+  --track-panel-width: 220px;
+  --transport-height:  44px;
+  --arrangement-header-height: 32px;
+  --track-lane-height: 80px;
+  --ruler-height:      22px;
+
+  /* Animações */
+  --transition-fast: 120ms ease;
+  --transition-base: 200ms ease;
+
+  /* Bordas arredondadas */
+  --radius-sm: 3px;
+  --radius-md: 5px;
+}
+
+/* --- Layout Principal -------------------------------------- */
+.app-shell {
+  display: grid;
+  grid-template-rows: var(--transport-height) 1fr;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+  background-color: var(--bg-root);
+}
+
+.workspace {
+  display: grid;
+  grid-template-columns: var(--track-panel-width) 1fr 240px;
+  overflow: hidden;
+  min-height: 0;
+}
+
+/* --- Scrollbar Custom -------------------------------------- */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-root);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
+
+::-webkit-scrollbar-corner {
+  background: var(--bg-root);
+}
+
+/* --- Drag-over global state -------------------------------- */
+/* When any file is dragged over the window, highlight empty lanes */
+.app--dragging .track-lane--empty .track-lane__load-btn {
+  border-color: var(--accent-fx);
+  color: var(--accent-fx);
+  opacity: 1;
+}
+
+.app--dragging .track-lane--empty .track-lane__drop-label {
+  opacity: 1;
+}
+
+/* --- Utilitários ------------------------------------------- */
+.mono {
+  font-family: var(--text-mono);
+}
+
+.truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

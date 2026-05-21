@@ -1,0 +1,182 @@
+/* ============================================================
+   TrackLane — Lane horizontal individual de uma track
+   ============================================================ */
+
+.track-lane {
+  position: relative;
+  height: var(--track-lane-height);
+  border-bottom: 1px solid var(--border-subtle);
+  overflow: hidden;
+  transition: background-color var(--transition-fast);
+}
+
+.track-lane:hover {
+  background-color: var(--hover-overlay);
+}
+
+/* Alternância de cor (zebra striping) */
+.track-lane--even {
+  background-color: var(--bg-lane);
+}
+
+.track-lane--odd {
+  background-color: var(--bg-lane-alt);
+}
+
+/* Grid de batidas (linhas verticais) */
+.track-lane__grid {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.track-lane__beat-line {
+  position: absolute;
+  top: 0;
+  width: 1px;
+  height: 100%;
+}
+
+.track-lane__beat-line--beat {
+  background-color: var(--border-grid);
+}
+
+.track-lane__beat-line--bar {
+  background-color: var(--border-bar);
+}
+
+/* Indicador de mute overlay */
+.track-lane--muted {
+  opacity: 0.35;
+}
+
+/* Indicador visual de tier na borda esquerda */
+.track-lane__tier-indicator {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 2px;
+  height: 100%;
+  opacity: 0.4;
+  z-index: 2;
+}
+
+/* Drop zone — shown when lane has no stem */
+.track-lane__drop-zone {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 14px;
+  z-index: 1;
+}
+
+.track-lane__load-btn {
+  flex-shrink: 0;
+  padding: 4px 12px;
+  background: transparent;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+}
+
+.track-lane__load-btn:hover {
+  background: var(--hover-overlay);
+  color: var(--accent-fx);
+  border-color: var(--accent-fx);
+}
+
+.track-lane__drop-label {
+  font-size: 10px;
+  color: var(--text-muted);
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity var(--transition-base);
+}
+
+.track-lane--empty:hover .track-lane__drop-label {
+  opacity: 1;
+}
+
+/* Drag-over highlight (applied via JS from useGlobalFileDrop) */
+.track-lane--drag-over {
+  outline: 1px solid var(--accent-fx);
+  outline-offset: -1px;
+  background-color: rgba(0, 229, 255, 0.06) !important;
+}
+
+.track-lane--drag-over .track-lane__load-btn {
+  color: var(--accent-fx);
+  border-color: var(--accent-fx);
+}
+
+/* Waveform container */
+.track-lane__waveform {
+  position: absolute;
+  inset: 2px 0 0 2px;
+  z-index: 1;
+  overflow: hidden;
+}
+
+/* Stem metadata overlay */
+.track-lane__stem-meta {
+  position: absolute;
+  bottom: 2px;
+  left: 6px;
+  right: 4px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  pointer-events: none;
+}
+
+.track-lane__stem-name {
+  font-size: 10px;
+  color: var(--text-secondary);
+  font-family: var(--text-mono);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+}
+
+.track-lane__stem-level {
+  font-size: 10px;
+  color: var(--text-muted);
+  font-family: var(--text-mono);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.track-lane__replace-btn {
+  pointer-events: all;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 13px;
+  padding: 0 2px;
+  line-height: 1;
+  opacity: 0;
+  transition: opacity var(--transition-fast), color var(--transition-fast);
+  flex-shrink: 0;
+}
+
+.track-lane__waveform:hover .track-lane__replace-btn {
+  opacity: 1;
+}
+
+.track-lane__replace-btn:hover {
+  color: var(--accent-fx);
+}

@@ -1,0 +1,37 @@
+/* ============================================================
+   Playhead — agulha de posição na timeline
+   ============================================================ */
+
+.playhead {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 0;          /* sem largura própria — ocupada pela linha */
+  pointer-events: none;
+  z-index: 50;
+  will-change: transform;
+}
+
+/* Cabeça triangular (triângulo apontando pra baixo) */
+.playhead__head {
+  position: absolute;
+  top: 0;
+  left: -5px;
+  width: 11px;
+  height: 10px;
+  background: var(--accent-fx);
+  clip-path: polygon(0 0, 100% 0, 50% 100%);
+  border-radius: 1px 1px 0 0;
+}
+
+/* Linha vertical */
+.playhead__line {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 1px;
+  background: var(--accent-fx);
+  opacity: 0.75;
+}

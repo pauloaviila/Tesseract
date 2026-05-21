@@ -1,0 +1,57 @@
+/* ============================================================
+   TimeRuler — Régua de tempo (mm:ss) na base da timeline
+   ============================================================ */
+
+.time-ruler {
+  display: flex;
+  position: relative;
+  height: var(--ruler-height);
+  background-color: var(--bg-ruler);
+  border-top: 1px solid var(--border-subtle);
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+/* Marcador de tempo */
+.time-ruler__tick {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  pointer-events: none;
+}
+
+/* Linha vertical */
+.time-ruler__tick-line {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 1px;
+}
+
+.time-ruler__tick-line--major {
+  height: 100%;
+  background-color: var(--border-bar);
+}
+
+.time-ruler__tick-line--minor {
+  height: 35%;
+  background-color: var(--border-beat);
+}
+
+/* Label do tempo */
+.time-ruler__label {
+  position: absolute;
+  bottom: 3px;
+  left: 5px;
+  font-family: var(--text-mono);
+  font-size: 9px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  letter-spacing: 0.5px;
+}
+
+.time-ruler__label--major {
+  color: var(--text-primary);
+  font-weight: 600;
+}

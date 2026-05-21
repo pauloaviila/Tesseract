@@ -1,0 +1,204 @@
+/* ============================================================
+   AnalysisPanel — Painel lateral de análise espectral
+   ============================================================ */
+
+.analysis-panel {
+  width: 240px;
+  flex-shrink: 0;
+  background: var(--bg-panel);
+  border-left: 1px solid var(--border-subtle);
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  overflow-y: auto;
+  font-size: 11px;
+}
+
+.analysis-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px 8px;
+  border-bottom: 1px solid var(--border-subtle);
+  flex-shrink: 0;
+}
+
+.analysis-panel__title {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.analysis-panel__loaded {
+  font-size: 10px;
+  color: var(--text-muted);
+  font-family: var(--text-mono);
+}
+
+.analysis-panel__run-btn {
+  margin: 10px 12px;
+  padding: 7px 0;
+  background: var(--accent-fx);
+  color: #000;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: opacity var(--transition-fast), background var(--transition-fast);
+  flex-shrink: 0;
+}
+
+.analysis-panel__run-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.analysis-panel__run-btn--running {
+  background: var(--text-muted);
+  cursor: wait;
+}
+
+.analysis-panel__run-btn:not(:disabled):hover {
+  opacity: 0.85;
+}
+
+.analysis-panel__error {
+  margin: 4px 12px;
+  padding: 6px 8px;
+  background: rgba(255, 59, 92, 0.1);
+  border: 1px solid rgba(255, 59, 92, 0.3);
+  border-radius: var(--radius-sm);
+  color: var(--accent-kick);
+  font-size: 10px;
+  line-height: 1.4;
+}
+
+.analysis-panel__clean {
+  margin: 8px 12px;
+  font-size: 10px;
+  color: var(--accent-bass);
+  line-height: 1.5;
+}
+
+.analysis-panel__section-label {
+  padding: 8px 12px 4px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  border-top: 1px solid var(--border-subtle);
+}
+
+/* ── Conflicts ─────────────────────────────────────────────── */
+
+.analysis-panel__conflicts {
+  display: flex;
+  flex-direction: column;
+}
+
+.analysis-panel__conflict {
+  display: grid;
+  grid-template-columns: 52px 1fr auto;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 12px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.analysis-panel__conflict--low    { border-left: 2px solid var(--accent-hihat); }
+.analysis-panel__conflict--medium { border-left: 2px solid var(--accent-snare); }
+.analysis-panel__conflict--high   { border-left: 2px solid var(--accent-kick); }
+
+.analysis-panel__conflict-band {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.analysis-panel__conflict-stems {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.analysis-panel__conflict-hi {
+  color: var(--text-primary);
+  font-size: 10px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.analysis-panel__conflict-arrow {
+  color: var(--text-muted);
+  font-size: 9px;
+  flex-shrink: 0;
+}
+
+.analysis-panel__conflict-lo {
+  color: var(--text-secondary);
+  font-size: 10px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.analysis-panel__conflict-db {
+  font-family: var(--text-mono);
+  font-size: 10px;
+  color: var(--accent-snare);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* ── Gain Staging ──────────────────────────────────────────── */
+
+.analysis-panel__gain {
+  display: flex;
+  flex-direction: column;
+}
+
+.analysis-panel__gain-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.analysis-panel__gain-name {
+  font-size: 10px;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.analysis-panel__gain-current {
+  font-family: var(--text-mono);
+  font-size: 9px;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.analysis-panel__gain-delta {
+  font-family: var(--text-mono);
+  font-size: 10px;
+  color: var(--accent-bass);
+  white-space: nowrap;
+}
+
+.analysis-panel__gain-delta--warn {
+  color: var(--accent-snare);
+}

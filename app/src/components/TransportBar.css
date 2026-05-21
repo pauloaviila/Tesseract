@@ -1,0 +1,192 @@
+/* ============================================================
+   TransportBar — Barra de controles de transporte
+   ============================================================ */
+
+.transport-bar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 0 16px;
+  height: var(--transport-height);
+  background-color: var(--bg-transport);
+  border-bottom: 1px solid var(--border-subtle);
+  z-index: 10;
+}
+
+/* Logo / Branding */
+.transport-bar__brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-right: 8px;
+}
+
+.transport-bar__logo {
+  font-family: var(--text-mono);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--accent-fx);
+  opacity: 0.9;
+}
+
+.transport-bar__version {
+  font-family: var(--text-mono);
+  font-size: 9px;
+  color: var(--text-muted);
+  letter-spacing: 1px;
+}
+
+/* Separador vertical */
+.transport-bar__divider {
+  width: 1px;
+  height: 20px;
+  background-color: var(--border-subtle);
+}
+
+/* Grupo de botões de transporte */
+.transport-bar__controls {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.transport-bar__btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  font-size: 16px;
+}
+
+.transport-bar__btn:hover {
+  background-color: var(--hover-overlay);
+  color: var(--text-primary);
+  border-color: var(--border-subtle);
+}
+
+.transport-bar__btn--active {
+  color: var(--accent-fx);
+  background-color: rgba(0, 229, 255, 0.08);
+  border-color: rgba(0, 229, 255, 0.2);
+}
+
+/* Timecode display */
+.transport-bar__timecode {
+  font-family: var(--text-mono);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  letter-spacing: 1.5px;
+  padding: 4px 10px;
+  background-color: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  min-width: 76px;
+  text-align: center;
+}
+
+/* Display de BPM */
+.transport-bar__bpm {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  background-color: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+}
+
+.transport-bar__bpm-value {
+  font-family: var(--text-mono);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  letter-spacing: 0.5px;
+  cursor: text;
+}
+
+.transport-bar__bpm-value:hover {
+  color: var(--accent-fx);
+}
+
+.transport-bar__bpm-input {
+  font-family: var(--text-mono);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--accent-fx);
+  background: transparent;
+  border: none;
+  outline: none;
+  width: 38px;
+  text-align: center;
+  letter-spacing: 0.5px;
+  /* hide spinner arrows */
+  -moz-appearance: textfield;
+}
+.transport-bar__bpm-input::-webkit-outer-spin-button,
+.transport-bar__bpm-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+}
+
+.transport-bar__bpm-label {
+  font-family: var(--text-mono);
+  font-size: 9px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+/* Display de Time Signature */
+.transport-bar__time-sig {
+  font-family: var(--text-mono);
+  font-size: 12px;
+  color: var(--text-secondary);
+  padding: 4px 8px;
+  background-color: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+}
+
+/* Nome do projeto */
+.transport-bar__project-name {
+  margin-left: auto;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  letter-spacing: 0.5px;
+}
+
+/* Indicador de headroom */
+.transport-bar__headroom {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  background-color: rgba(6, 214, 160, 0.06);
+  border: 1px solid rgba(6, 214, 160, 0.15);
+  border-radius: var(--radius-sm);
+}
+
+.transport-bar__headroom-value {
+  font-family: var(--text-mono);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--accent-bass);
+}
+
+.transport-bar__headroom-label {
+  font-family: var(--text-mono);
+  font-size: 8px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}

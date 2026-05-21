@@ -1,0 +1,101 @@
+/* ============================================================
+   TrackListPanel — Painel lateral com lista de tracks
+   ============================================================ */
+
+.track-list-panel {
+  display: flex;
+  flex-direction: column;
+  width: var(--track-panel-width);
+  background-color: var(--bg-panel);
+  border-right: 1px solid var(--border-subtle);
+  overflow: hidden;
+}
+
+/* Header do painel — espaço que alinha com as réguas e section headers */
+.track-list-panel__header {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+}
+
+/* Zona da régua de barras (alinhada com BarRuler + ArrangementHeader) */
+.track-list-panel__ruler-zone {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: calc(var(--arrangement-header-height) + var(--ruler-height));
+  padding: 0 10px;
+  background-color: var(--bg-header);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.track-list-panel__title {
+  font-family: var(--text-mono);
+  font-size: 9px;
+  font-weight: 500;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+
+.track-list-panel__count {
+  font-family: var(--text-mono);
+  font-size: 9px;
+  color: var(--text-muted);
+}
+
+/* Barra de seleção (aparece quando 2+ tracks selecionadas) */
+.track-list-panel__selection-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 10px;
+  background-color: rgba(0, 229, 255, 0.06);
+  border-bottom: 1px solid rgba(0, 229, 255, 0.15);
+  flex-shrink: 0;
+}
+
+.track-list-panel__selection-text {
+  font-family: var(--text-mono);
+  font-size: 9px;
+  font-weight: 600;
+  color: var(--accent-fx);
+  letter-spacing: 0.3px;
+}
+
+.track-list-panel__selection-hint {
+  font-family: var(--text-mono);
+  font-size: 8px;
+  color: var(--text-muted);
+  letter-spacing: 0.5px;
+  padding: 1px 5px;
+  background-color: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border-subtle);
+  border-radius: 2px;
+}
+
+/* Corpo scrollável */
+.track-list-panel__body {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* Zona de footer alinhada com TimeRuler */
+.track-list-panel__footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: var(--ruler-height);
+  background-color: var(--bg-ruler);
+  border-top: 1px solid var(--border-subtle);
+  flex-shrink: 0;
+}
+
+.track-list-panel__footer-label {
+  font-family: var(--text-mono);
+  font-size: 8px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+}

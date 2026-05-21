@@ -1,0 +1,48 @@
+/* ============================================================
+   ArrangementHeader — Seções do arranjo (Intro, Verse, etc.)
+   ============================================================ */
+
+.arrangement-header {
+  display: flex;
+  height: var(--arrangement-header-height);
+  background-color: var(--bg-header);
+  border-bottom: 1px solid var(--border-subtle);
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.arrangement-header__section {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  border-right: 1px solid var(--border-strong);
+  position: relative;
+  overflow: hidden;
+  transition: filter var(--transition-fast);
+}
+
+.arrangement-header__section:hover {
+  filter: brightness(1.2);
+}
+
+.arrangement-header__section::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: currentColor;
+  opacity: 0.3;
+}
+
+.arrangement-header__label {
+  font-family: var(--text-mono);
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--text-primary);
+  opacity: 0.8;
+}
