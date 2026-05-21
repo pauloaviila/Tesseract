@@ -168,28 +168,35 @@ pub fn run_detective(stem_path: &str, _project_bpm: f64) -> Result<DetectiveResu
 
     let bpm_estimated = (60.0 * f_frame) / final_lag;
 
-    // --- 6. Transients Detection (Banda A + ODF Total para Confiança) ---
-    // Calculando média e desvio padrão para threshold adaptativo de picos
-    let mut mean_a = 0.0f64;
-    let mut variance_a = 0.0f64;
-    if !odf_a.is_empty() {
-        mean_a = odf_a.iter().map(|&x| x as f64).sum::<f64>() / odf_a.len() as f64;
-        variance_a = odf_a.iter().map(|&x| {
-            let diff = x as f64 - mean_a;
-            diff * diff
-        }).sum::<f64>() / odf_a.len() as f64;
+    // --- 6. Transients Detection (Combined ODF: Sub/Kick + Mid/Snare + Hats) ---
+    let mut odf_total = vec![0.0f64; num_frames];
+    for i in 0..num_frames {
+        odf_total[i] = odf_a[i] as f64 * weight_a + odf_b[i] as f64 * weight_b + odf_c[i] as f64 * weight_c;
     }
-    let std_dev_a = variance_a.sqrt();
-    let threshold_a = mean_a + 1.5 * std_dev_a;
+
+    let mut mean_total = 0.0f64;
+    let mut variance_total = 0.0f64;
+    if !odf_total.is_empty() {
+        mean_total = odf_total.iter().sum::<f64>() / odf_total.len() as f64;
+        variance_total = odf_total.iter().map(|&x| {
+            let diff = x - mean_total;
+            diff * diff
+        }).sum::<f64>() / odf_total.len() as f64;
+    }
+    let std_dev_total = variance_total.sqrt();
+    let threshold_total = mean_total + 1.2 * std_dev_total; // 1.2 para maior sensibilidade a ghost notes e rolos
 
     let mut transients_ms = Vec::new();
-    for t in 1..(odf_a.len() - 1) {
-        let prev = odf_a[t - 1];
-        let curr = odf_a[t];
-        let next = odf_a[t + 1];
-        if curr > prev && curr > next && curr as f64 > threshold_a {
+    for t in 1..(odf_total.len() - 1) {
+        let prev = odf_total[t - 1];
+        let curr = odf_total[t];
+        let next = odf_total[t + 1];
+        if curr > prev && curr > next && curr > threshold_total {
             let ms = (t as f64 * hop_size as f64 * 1000.0) / sample_rate as f64;
-            transients_ms.push(ms);
+            // Janela de guarda de 30ms para evitar registros duplos na mesma vizinhança
+            if transients_ms.is_empty() || ms - transients_ms.last().unwrap() >= 30.0 {
+                transients_ms.push(ms);
+            }
         }
     }
 

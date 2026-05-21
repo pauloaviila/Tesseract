@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import type { RefObject } from 'react';
 import { useProjectStore } from '../store/projectStore';
+import { useArrangementDuration } from '../hooks/useArrangementDuration';
 import { BarRuler } from './BarRuler';
 import { TimeRuler } from './TimeRuler';
 import { TrackLane } from './TrackLane';
@@ -16,6 +17,9 @@ interface ArrangementViewProps {
 export function ArrangementView({ scrollRef, onScroll, onSeek }: ArrangementViewProps) {
   const tracks = useProjectStore((s) => s.project.tracks);
   const setZoom = useProjectStore((s) => s.setZoom);
+  const pixelsPerBeat = useProjectStore((s) => s.pixelsPerBeat);
+  const { totalBeats } = useArrangementDuration();
+  const timelineTotalWidthPx = totalBeats * pixelsPerBeat;
 
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -48,9 +52,6 @@ export function ArrangementView({ scrollRef, onScroll, onSeek }: ArrangementView
       ref={containerRef}
     >
       <div className="arrangement-view__scroll-container">
-        {/* Agulha de playhead — abrange toda a altura */}
-        <Playhead />
-
         {/* Régua de compassos — clicável para seek */}
         <div className="arrangement-view__top-rulers">
           <BarRuler onSeek={onSeek} />
@@ -61,8 +62,9 @@ export function ArrangementView({ scrollRef, onScroll, onSeek }: ArrangementView
           className="arrangement-view__lanes"
           ref={scrollRef}
           onScroll={onScroll}
+          style={{ minWidth: timelineTotalWidthPx }}
         >
-          <div className="arrangement-view__lanes-inner">
+          <div className="arrangement-view__lanes-inner" style={{ minWidth: timelineTotalWidthPx }}>
             {tracks.map((track, index) => (
               <TrackLane key={track.id} track={track} index={index} />
             ))}
@@ -73,6 +75,9 @@ export function ArrangementView({ scrollRef, onScroll, onSeek }: ArrangementView
         <div className="arrangement-view__bottom-ruler">
           <TimeRuler />
         </div>
+
+        {/* Agulha de playhead — abrange toda a altura (renderizado por último para garantir z-index) */}
+        <Playhead />
       </div>
     </main>
   );

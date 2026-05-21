@@ -51,8 +51,7 @@ export function BarRuler({ onSeek }: BarRulerProps) {
 
     const getBeat = (ev: MouseEvent | React.MouseEvent) => {
       const rect = ruler.getBoundingClientRect();
-      const scrollLeft = ruler.parentElement?.parentElement?.scrollLeft ?? 0;
-      const x = ev.clientX - rect.left + scrollLeft;
+      const x = ev.clientX - rect.left;
       return Math.max(0, x / pixelsPerBeat);
     };
 
