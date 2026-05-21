@@ -3,7 +3,7 @@ use std::hash::{Hash, Hasher};
 use std::path::Path;
 use std::fs::File;
 use std::io::{Write, BufWriter};
-use crate::audio::decode_file;
+use crate::audio::{decode_file, compute_peaks};
 use crate::detective::DetectiveResult;
 
 // ── Estruturas de Dados ───────────────────────────────────────────────────────
@@ -20,6 +20,8 @@ pub struct PerfectTimeResult {
     pub stretch_ratio: f64,
     pub method_used: StretchMethod,
     pub architect_suggestion: ArchitectSuggestion,
+    pub new_duration_secs: f64,       // NOVO: Duração exata do áudio esticado
+    pub new_peaks: Vec<[f32; 2]>,     // NOVO: O gráfico de onda recalculado
 }
 
 #[derive(serde::Serialize, Clone, Debug)]
@@ -424,12 +426,24 @@ pub fn process_slicing(
     }
     let slice_starts_ms = calculate_slice_starts(&onsets_orig);
 
-    // Determinar a duração total da saída
     let last_pt = control_points.last().unwrap();
     let target_end_ms = last_pt.1;
-    let target_end_frame = (target_end_ms * sample_rate as f64 / 1000.0) as usize;
-    
-    // Alocar buffer de saída com silêncio
+
+    // --- CORREÇÃO: Descobrir o tamanho real do buffer sem decapitar o final ---
+    let mut max_target_end_ms = target_end_ms;
+    for n in 0..k {
+        let orig_start_ms = slice_starts_ms[n];
+        let orig_end_ms = if n + 1 < k { slice_starts_ms[n + 1] } else { total_duration_ms };
+        let offset_ms = control_points[n].0 - orig_start_ms;
+        let target_start_ms = (control_points[n].1 - offset_ms).max(0.0);
+        let target_end_slice_ms = target_start_ms + (orig_end_ms - orig_start_ms);
+        
+        if target_end_slice_ms > max_target_end_ms {
+            max_target_end_ms = target_end_slice_ms;
+        }
+    }
+
+    let target_end_frame = (max_target_end_ms * sample_rate as f64 / 1000.0).ceil() as usize;
     let mut output_samples = vec![0.0f32; target_end_frame * channels as usize];
 
     for n in 0..k {
@@ -445,19 +459,16 @@ pub fn process_slicing(
         let start_frame = (orig_start_ms * sample_rate as f64 / 1000.0) as usize;
         let end_frame = (orig_end_ms * sample_rate as f64 / 1000.0) as usize;
         
-        if end_frame <= start_frame || start_frame * channels as usize >= decoded.samples.len() {
-            continue;
-        }
+        if end_frame <= start_frame || start_frame * channels as usize >= decoded.samples.len() { continue; }
 
         let slice_samples_start = start_frame * channels as usize;
         let slice_samples_end = (end_frame * channels as usize).min(decoded.samples.len());
         
         let mut slice = decoded.samples[slice_samples_start..slice_samples_end].to_vec();
         
-        // Aplica micro-fades de 2ms nas bordas da fatia
+        // Micro-fades para não dar click
         apply_micro_fade_multichannel(&mut slice, 2.0, sample_rate, channels as u32);
 
-        // Copiar fatia misturando (overlap-add) no buffer de saída
         let target_start_frame = (target_start_ms * sample_rate as f64 / 1000.0) as usize;
         let target_samples_start = target_start_frame * channels as usize;
         
@@ -467,17 +478,27 @@ pub fn process_slicing(
         }
     }
 
-    // 3. Salvar arquivo no diretório de cache
     let filename = generate_cache_filename(stem_path, project_bpm, &anchors);
     let out_path = cache_dir.join(&filename);
     write_wav_file(&out_path, &output_samples, sample_rate, channels as u16)?;
 
-    // Calcular o stretch ratio médio para a estatística
-    let stretch_ratio = if total_duration_ms > 0.0 {
-        target_end_ms / total_duration_ms
+    // --- CORREÇÃO: Converter para mono e calcular os novos picos e duração exata para a UI ---
+    let new_duration_secs = output_samples.len() as f64 / (sample_rate as f64 * channels as f64);
+    let mono_samples = if channels == 1 {
+        output_samples.clone()
     } else {
-        1.0
+        output_samples
+            .chunks_exact(channels as usize)
+            .map(|frame| frame.iter().sum::<f32>() / channels as f32)
+            .collect()
     };
+
+    let new_peaks = compute_peaks(&mono_samples, 4000)
+        .into_iter()
+        .map(|(lo, hi)| [lo, hi])
+        .collect();
+
+    let stretch_ratio = if total_duration_ms > 0.0 { target_end_ms / total_duration_ms } else { 1.0 };
 
     Ok(PerfectTimeResult {
         output_path: out_path.to_string_lossy().to_string(),
@@ -490,5 +511,7 @@ pub fn process_slicing(
             collision_warning: false,
             collision_element_id: None,
         },
+        new_duration_secs, // MANDANDO PRO REACT
+        new_peaks,         // MANDANDO PRO REACT
     })
 }

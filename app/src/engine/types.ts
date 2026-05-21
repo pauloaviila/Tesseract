@@ -57,6 +57,8 @@ export interface PerfectTimeResult {
   stretch_ratio: number;
   method_used: 'Slicing' | 'PhaseVocoder';
   architect_suggestion: ArchitectSuggestion;
+  new_duration_secs: number;
+  new_peaks: [number, number][];
 }
 
 export interface ProcessedEventPayload {

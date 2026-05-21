@@ -39,7 +39,9 @@ export async function triggerPerfectTimeProcess(trackId: string, projectBpm: num
           confidence: stem.detectiveResult?.confidence ?? 1.0,
           collision_warning: false,
           collision_element_id: null,
-        }
+        },
+        new_duration_secs: stem.durationSecs,
+        new_peaks: stem.peaks,
       });
     }, 1000);
     return;

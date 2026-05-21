@@ -175,7 +175,9 @@ export function TrackLane({ track, index }: TrackLaneProps) {
   }, [stem, setStemAnchors, track.id]);
 
   const hasStem = !!stem;
-  const stemWidthPx = hasStem ? (stem.durationSecs * bpm / 60) * pixelsPerBeat : 0;
+  const activeDuration = stem?.perfectTimeResult?.new_duration_secs ?? stem?.durationSecs ?? 0;
+  const activePeaks = stem?.perfectTimeResult?.new_peaks ?? stem?.peaks ?? [];
+  const stemWidthPx = hasStem ? (activeDuration * bpm / 60) * pixelsPerBeat : 0;
 
   return (
     <div
@@ -220,7 +222,7 @@ export function TrackLane({ track, index }: TrackLaneProps) {
           onDoubleClick={handleWaveformDoubleClick}
         >
           <WaveformCanvas
-            peaks={stem.peaks}
+            peaks={activePeaks}
             color={track.color}
             height={TRACK_LANE_HEIGHT_PX - 8}
             width={stemWidthPx}
