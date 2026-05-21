@@ -32,6 +32,7 @@ pub fn run() {
             commands::pb_set_volume,
             commands::pb_set_muted,
             commands::pb_register_stem,
+            commands::delete_cache_file,
         ])
         .run(tauri::generate_context!())
         .expect("error while running Tesseract Engine");

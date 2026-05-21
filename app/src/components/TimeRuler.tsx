@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { useProjectStore } from '../store/projectStore';
+import { useArrangementDuration } from '../hooks/useArrangementDuration';
 import {
-  TOTAL_ARRANGEMENT_BEATS,
   beatsToSeconds,
   formatTime,
 } from '../utils/constants';
@@ -18,10 +18,10 @@ interface TimeTick {
  * Calcula intervalos de tempo baseados no BPM e zoom (pixelsPerBeat).
  * Major ticks a cada 5 segundos, minor a cada 1 segundo.
  */
-function useTimeTicks(bpm: number, pixelsPerBeat: number): TimeTick[] {
+function useTimeTicks(bpm: number, pixelsPerBeat: number, totalBeats: number): TimeTick[] {
   return useMemo(() => {
     const ticks: TimeTick[] = [];
-    const totalSeconds = beatsToSeconds(TOTAL_ARRANGEMENT_BEATS, bpm);
+    const totalSeconds = beatsToSeconds(totalBeats, bpm);
     const secondsPerBeat = 60 / bpm;
     const pxPerSecond = pixelsPerBeat / secondsPerBeat;
 
@@ -35,7 +35,7 @@ function useTimeTicks(bpm: number, pixelsPerBeat: number): TimeTick[] {
       });
     }
     return ticks;
-  }, [bpm, pixelsPerBeat]);
+  }, [bpm, pixelsPerBeat, totalBeats]);
 }
 
 /**
@@ -46,9 +46,10 @@ function useTimeTicks(bpm: number, pixelsPerBeat: number): TimeTick[] {
 export function TimeRuler() {
   const bpm = useProjectStore((s) => s.project.bpm);
   const pixelsPerBeat = useProjectStore((s) => s.pixelsPerBeat);
-  const ticks = useTimeTicks(bpm, pixelsPerBeat);
+  const { totalBeats } = useArrangementDuration();
+  const ticks = useTimeTicks(bpm, pixelsPerBeat, totalBeats);
   
-  const timelineTotalWidthPx = TOTAL_ARRANGEMENT_BEATS * pixelsPerBeat;
+  const timelineTotalWidthPx = totalBeats * pixelsPerBeat;
 
   return (
     <div

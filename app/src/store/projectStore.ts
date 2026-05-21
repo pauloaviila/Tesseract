@@ -74,7 +74,13 @@ interface ProjectState {
 
   /** Altera o nível de zoom */
   setZoom: (newZoom: number) => void;
+
+  /** Resolução do snap magnético */
+  snapResolution: SnapResolution;
+  setSnapResolution: (res: SnapResolution) => void;
 }
+
+export type SnapResolution = '1/4' | '1/8' | '1/16' | '1/32' | '1/3T';
 
 export const useProjectStore = create<ProjectState>((set, get) => ({
   project: MOCK_PROJECT,
@@ -82,6 +88,8 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
   playheadBeat: 0,
   selectedTrackIds: [],
   pixelsPerBeat: 48, // valor padrão inicial (48px por batida)
+  snapResolution: '1/8',
+  setSnapResolution: (res) => set({ snapResolution: res }),
 
   toggleMute: (trackId) =>
     set((state) => ({

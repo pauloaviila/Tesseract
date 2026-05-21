@@ -190,3 +190,31 @@
   text-transform: uppercase;
   letter-spacing: 1px;
 }
+
+/* Snap Control */
+.transport-bar__snap {
+  display: flex;
+  align-items: center;
+  padding: 4px 10px;
+  background-color: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+}
+
+.transport-bar__snap-select {
+  background: transparent;
+  border: none;
+  color: var(--text-primary);
+  font-family: var(--text-mono);
+  font-size: 12px;
+  font-weight: 600;
+  outline: none;
+  cursor: pointer;
+  padding-right: 4px;
+}
+
+.transport-bar__snap-select option {
+  background-color: var(--bg-transport);
+  color: var(--text-primary);
+  font-family: var(--text-mono);
+}

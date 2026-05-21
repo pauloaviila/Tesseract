@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { listen } from '@tauri-apps/api/event';
 import { useStemStore } from '../store/stemStore';
 import { useProjectStore } from '../store/projectStore';
-import { perfectTimeAnalyze, perfectTimeProcess } from '../engine/tauri';
+import { perfectTimeAnalyze, perfectTimeProcess, deleteCacheFile } from '../engine/tauri';
 import type { DetectiveEventPayload, ProcessedEventPayload } from '../engine/types';
 import { pbRegisterStem } from '../engine/audioEngine';
 
@@ -12,8 +12,12 @@ const IS_TAURI =
 export function clearTrackWarp(trackId: string) {
   const stem = useStemStore.getState().stems[trackId];
   if (!stem) return;
+  const oldPath = stem.perfectTimeResult?.output_path;
   useStemStore.getState().clearStemPerfectTimeResult(trackId);
   pbRegisterStem(trackId, stem.filePath);
+  if (oldPath) {
+    deleteCacheFile(oldPath).catch((err) => console.error('[PerfectTime] erro ao deletar cache anterior:', err));
+  }
 }
 
 export async function triggerPerfectTimeProcess(trackId: string, projectBpm: number) {
@@ -42,7 +46,8 @@ export async function triggerPerfectTimeProcess(trackId: string, projectBpm: num
   }
   
   try {
-    await perfectTimeProcess(stem.filePath, projectBpm, stem.anchors ?? null, stem.detectiveResult);
+    const oldPath = stem.perfectTimeResult?.output_path ?? null;
+    await perfectTimeProcess(stem.filePath, projectBpm, stem.anchors ?? null, stem.detectiveResult, oldPath);
   } catch (err) {
     console.error('[PerfectTime] Erro ao chamar perfectTimeProcess:', err);
     useStemStore.getState().setStemProcessingState(trackId, stem.detectiveResult.requires_manual_anchors ? 'awaiting_anchors' : 'idle');

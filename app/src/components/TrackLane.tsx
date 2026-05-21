@@ -8,9 +8,9 @@ import { pickAudioFile, loadStemFromPath } from '../engine/stemLoader';
 import { triggerPerfectTimeProcess, clearTrackWarp } from '../hooks/usePerfectTime';
 import {
   BEATS_PER_BAR,
-  TOTAL_ARRANGEMENT_BEATS,
   TRACK_LANE_HEIGHT_PX,
 } from '../utils/constants';
+import { useArrangementDuration } from '../hooks/useArrangementDuration';
 import './TrackLane.css';
 
 interface TrackLaneProps {
@@ -18,24 +18,66 @@ interface TrackLaneProps {
   readonly index: number;
 }
 
-function useBeatLines(pixelsPerBeat: number) {
+function useBeatLines(pixelsPerBeat: number, snapResolution: string, totalBeats: number) {
   return useMemo(() => {
-    const lines: { position: number; isBar: boolean }[] = [];
-    for (let beat = 0; beat < TOTAL_ARRANGEMENT_BEATS; beat++) {
+    const lines: { position: number; isBar: boolean; isSubdivision: boolean }[] = [];
+    
+    let step = 1.0;
+    switch (snapResolution) {
+      case '1/4': step = 1.0; break;
+      case '1/8': step = 0.5; break;
+      case '1/16': step = 0.25; break;
+      case '1/32': step = 0.125; break;
+      case '1/3T': step = 1.0 / 3.0; break;
+      default: step = 0.5;
+    }
+
+    const pxPerStep = step * pixelsPerBeat;
+    // Se o espaço visual entre subdivisões for menor que 8px, recua para subdivisões maiores
+    let finalStep = step;
+    if (pxPerStep < 8) {
+      if (pixelsPerBeat >= 8) {
+        finalStep = 1.0; // Beats inteiros
+      } else {
+        finalStep = 4.0; // Apenas compassos
+      }
+    }
+
+    const totalSteps = Math.ceil(totalBeats / finalStep);
+    for (let i = 0; i < totalSteps; i++) {
+      const beat = i * finalStep;
+      const position = beat * pixelsPerBeat;
+      const isBar = Math.abs(beat % BEATS_PER_BAR) < 1e-4;
+      const isSubdivision = !isBar && (Math.abs(beat % 1.0) >= 1e-4);
+
       lines.push({
-        position: beat * pixelsPerBeat,
-        isBar: beat % BEATS_PER_BAR === 0,
+        position,
+        isBar,
+        isSubdivision,
       });
     }
     return lines;
-  }, [pixelsPerBeat]);
+  }, [pixelsPerBeat, snapResolution, totalBeats]);
+}
+
+function getSnapStep(resolution: string): number {
+  switch (resolution) {
+    case '1/4': return 0.25;
+    case '1/8': return 0.125;
+    case '1/16': return 0.0625;
+    case '1/32': return 0.03125;
+    case '1/3T': return 1.0 / 3.0;
+    default: return 0.125;
+  }
 }
 
 export function TrackLane({ track, index }: TrackLaneProps) {
   const pixelsPerBeat = useProjectStore((s) => s.pixelsPerBeat);
-  const beatLines = useBeatLines(pixelsPerBeat);
+  const snapResolution = useProjectStore((s) => s.snapResolution);
+  const { totalBeats } = useArrangementDuration();
+  const beatLines = useBeatLines(pixelsPerBeat, snapResolution, totalBeats);
   const parity = index % 2 === 0 ? 'even' : 'odd';
-  const totalWidth = TOTAL_ARRANGEMENT_BEATS * pixelsPerBeat;
+  const totalWidth = totalBeats * pixelsPerBeat;
 
   const stem = useStemStore((s) => s.stems[track.id]);
   const setStem = useStemStore((s) => s.setStem);
@@ -68,7 +110,9 @@ export function TrackLane({ track, index }: TrackLaneProps) {
     const rect = containerRef.current.getBoundingClientRect();
     const clickX = e.clientX - rect.left;
     const timeMs = xToTime(clickX);
-    const targetBeat = Math.round((clickX / pixelsPerBeat) * 8) / 8; // Snap para 1/8 beat
+    
+    const step = e.altKey ? 0.001 : getSnapStep(snapResolution);
+    const targetBeat = Math.round((clickX / pixelsPerBeat) / step) * step;
     
     // Evita duplicados na mesma vizinhança de tempo (100ms de margem)
     const currentAnchors = stem.anchors ?? [];
@@ -77,7 +121,7 @@ export function TrackLane({ track, index }: TrackLaneProps) {
     const newAnchors = [...currentAnchors, { time_ms: timeMs, beat: targetBeat }];
     newAnchors.sort((a, b) => a.time_ms - b.time_ms);
     setStemAnchors(track.id, newAnchors);
-  }, [stem, pixelsPerBeat, xToTime, setStemAnchors, track.id]);
+  }, [stem, pixelsPerBeat, xToTime, setStemAnchors, track.id, snapResolution]);
 
   // Handler de arraste de âncoras com snap magnético
   const handleAnchorMouseDown = useCallback((idx: number, e: React.MouseEvent<HTMLDivElement>) => {
@@ -90,13 +134,15 @@ export function TrackLane({ track, index }: TrackLaneProps) {
     
     const onMouseMove = (moveEvent: MouseEvent) => {
       const mouseX = moveEvent.clientX - rect.left;
-      const targetBeat = Math.round((mouseX / pixelsPerBeat) * 8) / 8; // Snap para 1/8 beat
+      
+      const step = moveEvent.altKey ? 0.001 : getSnapStep(snapResolution);
+      const targetBeat = Math.round((mouseX / pixelsPerBeat) / step) * step;
       
       // Limita o arraste para não cruzar as âncoras adjacentes (evita inversão temporal)
       const prevBeat = anchors[idx - 1]?.beat ?? 0;
-      const nextBeat = anchors[idx + 1]?.beat ?? TOTAL_ARRANGEMENT_BEATS;
+      const nextBeat = anchors[idx + 1]?.beat ?? totalBeats;
       
-      const clampedBeat = Math.max(prevBeat + 0.125, Math.min(nextBeat - 0.125, targetBeat));
+      const clampedBeat = Math.max(prevBeat + 0.001, Math.min(nextBeat - 0.001, targetBeat));
       
       anchors[idx] = { ...anchors[idx], beat: clampedBeat };
       setStemAnchors(track.id, anchors);
@@ -109,7 +155,7 @@ export function TrackLane({ track, index }: TrackLaneProps) {
     
     window.addEventListener('mousemove', onMouseMove);
     window.addEventListener('mouseup', onMouseUp);
-  }, [stem, pixelsPerBeat, setStemAnchors, track.id]);
+  }, [stem, pixelsPerBeat, setStemAnchors, track.id, snapResolution, totalBeats]);
 
   const handleAnchorContextMenu = useCallback((idx: number, e: React.MouseEvent) => {
     e.preventDefault();
@@ -157,6 +203,8 @@ export function TrackLane({ track, index }: TrackLaneProps) {
             className={`track-lane__beat-line ${
               line.isBar
                 ? 'track-lane__beat-line--bar'
+                : line.isSubdivision
+                ? 'track-lane__beat-line--subdivision'
                 : 'track-lane__beat-line--beat'
             }`}
             style={{ left: line.position }}

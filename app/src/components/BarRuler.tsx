@@ -1,10 +1,9 @@
 import { useMemo, useCallback } from 'react';
 import { useProjectStore } from '../store/projectStore';
+import { useArrangementDuration } from '../hooks/useArrangementDuration';
 import {
-  TOTAL_BARS,
   BAR_RULER_MAJOR_INTERVAL,
   BEATS_PER_BAR,
-  TOTAL_ARRANGEMENT_BEATS,
 } from '../utils/constants';
 import './BarRuler.css';
 
@@ -18,11 +17,11 @@ interface BarTick {
   isMajor: boolean;
 }
 
-function useBarTicks(pixelsPerBeat: number): BarTick[] {
+function useBarTicks(pixelsPerBeat: number, totalBars: number): BarTick[] {
   return useMemo(() => {
     const ticks: BarTick[] = [];
     const barWidthPx = pixelsPerBeat * BEATS_PER_BAR;
-    for (let bar = 1; bar <= TOTAL_BARS; bar++) {
+    for (let bar = 1; bar <= totalBars; bar++) {
       ticks.push({
         barNumber: bar,
         position: (bar - 1) * barWidthPx,
@@ -30,7 +29,7 @@ function useBarTicks(pixelsPerBeat: number): BarTick[] {
       });
     }
     return ticks;
-  }, [pixelsPerBeat]);
+  }, [pixelsPerBeat, totalBars]);
 }
 
 /**
@@ -41,7 +40,8 @@ function useBarTicks(pixelsPerBeat: number): BarTick[] {
  */
 export function BarRuler({ onSeek }: BarRulerProps) {
   const pixelsPerBeat = useProjectStore((s) => s.pixelsPerBeat);
-  const ticks = useBarTicks(pixelsPerBeat);
+  const { totalBars, totalBeats } = useArrangementDuration();
+  const ticks = useBarTicks(pixelsPerBeat, totalBars);
 
   const handleMouseDown = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     if (!onSeek) return;
@@ -80,7 +80,7 @@ export function BarRuler({ onSeek }: BarRulerProps) {
     window.addEventListener('mouseup', up);
   }, [onSeek, pixelsPerBeat]);
 
-  const timelineTotalWidthPx = TOTAL_ARRANGEMENT_BEATS * pixelsPerBeat;
+  const timelineTotalWidthPx = totalBeats * pixelsPerBeat;
 
   return (
     <div

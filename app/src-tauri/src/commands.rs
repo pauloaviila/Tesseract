@@ -281,6 +281,7 @@ pub async fn perfect_time_process(
     project_bpm: f64,
     anchors: Option<Vec<AnchorPoint>>,
     detective_result: DetectiveResult,
+    old_output_path: Option<String>,
     app: tauri::AppHandle,
 ) -> Result<JobQueued, String> {
     let job_id = NEXT_JOB_ID.fetch_add(1, Ordering::SeqCst);
@@ -290,6 +291,16 @@ pub async fn perfect_time_process(
         let path = stem_path.clone();
         let path_clone = stem_path.clone();
         
+        // Remove arquivo de cache antigo para liberar espaço no SSD
+        if let Some(ref old_path) = old_output_path {
+            if !old_path.is_empty() {
+                let old_p = Path::new(old_path);
+                if old_p.exists() {
+                    std::fs::remove_file(old_p).ok();
+                }
+            }
+        }
+
         let cache_dir = handle.path().app_cache_dir().unwrap_or_else(|_| std::env::temp_dir());
         std::fs::create_dir_all(&cache_dir).ok();
 
@@ -341,5 +352,14 @@ pub fn pb_register_stem(
     engine: tauri::State<PlaybackEngine>,
 ) -> Result<(), String> {
     engine.register_stem(track_id, file_path, 1.0);
+    Ok(())
+}
+
+#[command]
+pub fn delete_cache_file(path: String) -> Result<(), String> {
+    let p = Path::new(&path);
+    if p.exists() {
+        std::fs::remove_file(p).map_err(|e| e.to_string())?;
+    }
     Ok(())
 }

@@ -1,10 +1,10 @@
 use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::fs::File;
 use std::io::{Write, BufWriter};
-use crate::audio::{decode_file, DecodedAudio, to_mono};
-use crate::detective::{DetectiveResult, MaterialClass};
+use crate::audio::decode_file;
+use crate::detective::DetectiveResult;
 
 // ── Estruturas de Dados ───────────────────────────────────────────────────────
 
@@ -254,13 +254,14 @@ impl NaturalCubicSpline {
         
         if val <= self.x[0] {
             let t = val - self.x[0];
-            return self.y[0] + t * self.b[0];
+            let slope = self.b[0].clamp(0.2, 4.0);
+            return self.y[0] + t * slope;
         }
         if val >= self.x[n - 1] {
             let last_idx = n - 2;
             let t = val - self.x[n - 1];
             let h = self.x[n - 1] - self.x[n - 2];
-            let slope = self.b[last_idx] + 2.0 * self.c[last_idx] * h + 3.0 * self.d[last_idx] * h * h;
+            let slope = (self.b[last_idx] + 2.0 * self.c[last_idx] * h + 3.0 * self.d[last_idx] * h * h).clamp(0.2, 4.0);
             return self.y[n - 1] + t * slope;
         }
         
@@ -281,7 +282,12 @@ impl NaturalCubicSpline {
         }
         
         let t = val - self.x[idx];
-        self.a[idx] + self.b[idx] * t + self.c[idx] * t * t + self.d[idx] * t * t * t
+        let raw_y = self.a[idx] + self.b[idx] * t + self.c[idx] * t * t + self.d[idx] * t * t * t;
+        
+        // Clamping militar (limitador de velocidade/stretch ratio) para impedir overshoot de Runge
+        let min_y = self.y[idx] + 0.2 * t;
+        let max_y = self.y[idx] + 4.0 * t;
+        raw_y.clamp(min_y, max_y)
     }
 }
 
@@ -449,7 +455,7 @@ pub fn process_slicing(
         let mut slice = decoded.samples[slice_samples_start..slice_samples_end].to_vec();
         
         // Aplica micro-fades de 2ms nas bordas da fatia
-        apply_micro_fade_multichannel(&mut slice, 2.0, sample_rate, channels);
+        apply_micro_fade_multichannel(&mut slice, 2.0, sample_rate, channels as u32);
 
         // Copiar fatia misturando (overlap-add) no buffer de saída
         let target_start_frame = (target_start_ms * sample_rate as f64 / 1000.0) as usize;

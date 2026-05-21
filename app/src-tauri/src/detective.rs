@@ -13,7 +13,7 @@ pub enum MaterialClass {
     Mixed,
 }
 
-#[derive(Serialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct DetectiveResult {
     pub bpm_estimated: f64,
     pub confidence: f64,

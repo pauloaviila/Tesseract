@@ -102,6 +102,11 @@ export async function perfectTimeProcess(
   projectBpm: number,
   anchors: AnchorPoint[] | null,
   detectiveResult: DetectiveResult,
+  oldOutputPath: string | null,
 ): Promise<JobQueued> {
-  return invoke('perfect_time_process', { stemPath, projectBpm, anchors, detectiveResult });
+  return invoke('perfect_time_process', { stemPath, projectBpm, anchors, detectiveResult, oldOutputPath });
+}
+
+export async function deleteCacheFile(path: string): Promise<void> {
+  return invoke('delete_cache_file', { path });
 }

@@ -64,6 +64,27 @@ function BpmControl() {
   );
 }
 
+function SnapResolutionControl() {
+  const snapResolution = useProjectStore((s) => s.snapResolution);
+  const setSnapResolution = useProjectStore((s) => s.setSnapResolution);
+
+  return (
+    <div className="transport-bar__snap" title="Grid Snap Resolution">
+      <select
+        className="transport-bar__snap-select"
+        value={snapResolution}
+        onChange={(e) => setSnapResolution(e.target.value as any)}
+      >
+        <option value="1/4">1/4 Grid</option>
+        <option value="1/8">1/8 Grid</option>
+        <option value="1/16">1/16 Grid</option>
+        <option value="1/32">1/32 Grid</option>
+        <option value="1/3T">1/3T Triplet</option>
+      </select>
+    </div>
+  );
+}
+
 /** Barra de transporte com controles de playback e metadata do projeto */
 export function TransportBar() {
   const project = useProjectStore((s) => s.project);
@@ -124,6 +145,9 @@ export function TransportBar() {
       <div className="transport-bar__time-sig">
         {project.timeSignature[0]}/{project.timeSignature[1]}
       </div>
+
+      {/* Grid Snap Selector */}
+      <SnapResolutionControl />
 
       {/* Nome do Projeto */}
       <span className="transport-bar__project-name">{project.name}</span>

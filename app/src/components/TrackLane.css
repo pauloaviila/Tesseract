@@ -48,6 +48,10 @@
   background-color: var(--border-bar);
 }
 
+.track-lane__beat-line--subdivision {
+  background-color: rgba(255, 255, 255, 0.04);
+}
+
 /* Indicador de mute overlay */
 .track-lane--muted {
   opacity: 0.35;
