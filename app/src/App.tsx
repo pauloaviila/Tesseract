@@ -5,6 +5,7 @@ import { ArrangementView } from './components/ArrangementView';
 import { AnalysisPanel } from './components/AnalysisPanel';
 import { useAudioPlayback } from './hooks/useAudioPlayback';
 import { useGlobalFileDrop } from './hooks/useGlobalFileDrop';
+import { usePerfectTime } from './hooks/usePerfectTime';
 import { useProjectStore } from './store/projectStore';
 
 export function App() {
@@ -15,6 +16,7 @@ export function App() {
 
   const { seekTo } = useAudioPlayback();
   useGlobalFileDrop();
+  usePerfectTime();
 
   const handleTrackListScroll = useCallback(() => {
     const s = trackListScrollRef.current;

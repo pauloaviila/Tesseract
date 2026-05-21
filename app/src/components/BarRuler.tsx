@@ -1,14 +1,15 @@
 import { useMemo, useCallback } from 'react';
+import { useProjectStore } from '../store/projectStore';
 import {
-  BAR_WIDTH_PX,
   TOTAL_BARS,
   BAR_RULER_MAJOR_INTERVAL,
-  TIMELINE_TOTAL_WIDTH_PX,
+  BEATS_PER_BAR,
+  TOTAL_ARRANGEMENT_BEATS,
 } from '../utils/constants';
 import './BarRuler.css';
 
 interface BarRulerProps {
-  onSeek?: (beat: number) => void;
+  onSeek?: (beat: number, isDragging?: boolean) => void;
 }
 
 interface BarTick {
@@ -17,18 +18,19 @@ interface BarTick {
   isMajor: boolean;
 }
 
-function useBarTicks(): BarTick[] {
+function useBarTicks(pixelsPerBeat: number): BarTick[] {
   return useMemo(() => {
     const ticks: BarTick[] = [];
+    const barWidthPx = pixelsPerBeat * BEATS_PER_BAR;
     for (let bar = 1; bar <= TOTAL_BARS; bar++) {
       ticks.push({
         barNumber: bar,
-        position: (bar - 1) * BAR_WIDTH_PX,
+        position: (bar - 1) * barWidthPx,
         isMajor: (bar - 1) % BAR_RULER_MAJOR_INTERVAL === 0,
       });
     }
     return ticks;
-  }, []);
+  }, [pixelsPerBeat]);
 }
 
 /**
@@ -38,16 +40,8 @@ function useBarTicks(): BarTick[] {
  * independente do scroll do container pai.
  */
 export function BarRuler({ onSeek }: BarRulerProps) {
-  const ticks = useBarTicks();
-
-  const handleClick = useCallback(
-    (e: React.MouseEvent<HTMLDivElement>) => {
-      if (!onSeek) return;
-      const beat = e.nativeEvent.offsetX / (BAR_WIDTH_PX / 4); // px ÷ px-per-beat
-      onSeek(Math.max(0, beat));
-    },
-    [onSeek],
-  );
+  const pixelsPerBeat = useProjectStore((s) => s.pixelsPerBeat);
+  const ticks = useBarTicks(pixelsPerBeat);
 
   const handleMouseDown = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     if (!onSeek) return;
@@ -55,30 +49,44 @@ export function BarRuler({ onSeek }: BarRulerProps) {
 
     const ruler = e.currentTarget;
 
-    const move = (ev: MouseEvent) => {
+    const getBeat = (ev: MouseEvent | React.MouseEvent) => {
       const rect = ruler.getBoundingClientRect();
-      // Account for horizontal scroll of the container
       const scrollLeft = ruler.parentElement?.parentElement?.scrollLeft ?? 0;
       const x = ev.clientX - rect.left + scrollLeft;
-      const beat = Math.max(0, x / (BAR_WIDTH_PX / 4));
-      onSeek(beat);
+      return Math.max(0, x / pixelsPerBeat);
     };
 
-    const up = () => {
+    let lastBeat = getBeat(e);
+    
+    // Início imediato do drag (ou click rápido)
+    onSeek(lastBeat, true);
+
+    const move = (ev: MouseEvent) => {
+      const beat = getBeat(ev);
+      if (beat !== lastBeat) {
+        lastBeat = beat;
+        onSeek(beat, true);
+      }
+    };
+
+    const up = (ev: MouseEvent) => {
+      const beat = getBeat(ev);
+      onSeek(beat, false); // O drag terminou, aplica o seek no backend
       window.removeEventListener('mousemove', move);
       window.removeEventListener('mouseup', up);
     };
 
     window.addEventListener('mousemove', move);
     window.addEventListener('mouseup', up);
-  }, [onSeek]);
+  }, [onSeek, pixelsPerBeat]);
+
+  const timelineTotalWidthPx = TOTAL_ARRANGEMENT_BEATS * pixelsPerBeat;
 
   return (
     <div
       className={`bar-ruler ${onSeek ? 'bar-ruler--seekable' : ''}`}
       id="bar-ruler"
-      style={{ minWidth: TIMELINE_TOTAL_WIDTH_PX }}
-      onClick={handleClick}
+      style={{ minWidth: timelineTotalWidthPx }}
       onMouseDown={handleMouseDown}
     >
       {ticks.map((tick) => (

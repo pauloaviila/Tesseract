@@ -1,14 +1,17 @@
 use std::path::Path;
 use serde::{Deserialize, Serialize};
 use tauri::command;
+use tauri::Emitter;
 
 use crate::audio::{decode_file, to_mono, compute_peaks};
 use crate::dsp::{stft, detect_conflicts, measure_levels, gain_for_target_peak, FrequencyConflict, StemSpec};
 use crate::playback::PlaybackEngine;
+use crate::detective::{run_detective, DetectiveResult};
+use std::sync::atomic::{AtomicU32, Ordering};
 
 const FFT_SIZE: usize = 2048;
 const HOP_SIZE: usize = 512;
-const WAVEFORM_RESOLUTION: usize = 800;
+const WAVEFORM_RESOLUTION: usize = 4000;
 
 // ── Ingest ────────────────────────────────────────────────────────────────────
 
@@ -187,4 +190,76 @@ pub fn analyze_project(
     }
     let conflicts = detect_conflicts(&stem_specs);
     Ok(AnalysisResult { conflicts, gain_staging })
+}
+
+// ── Perfect Time: Motor 1 (Detective) ──────────────────────────────────────────
+
+static NEXT_JOB_ID: AtomicU32 = AtomicU32::new(1);
+
+#[derive(Serialize)]
+pub struct JobQueued {
+    pub job_id: u32,
+    pub status: String,
+}
+
+#[derive(Serialize, Clone)]
+pub struct DetectiveEventPayload {
+    pub job_id: u32,
+    pub stem_path: String,
+    pub status: String,
+    pub result: Option<DetectiveResult>,
+    pub error: Option<String>,
+}
+
+#[command]
+pub async fn perfect_time_analyze(
+    stem_path: String,
+    project_bpm: f64,
+    app: tauri::AppHandle,
+) -> Result<JobQueued, String> {
+    let job_id = NEXT_JOB_ID.fetch_add(1, Ordering::SeqCst);
+    let handle = app.clone();
+    
+    tauri::async_runtime::spawn(async move {
+        let path = stem_path.clone();
+        let path_clone = stem_path.clone();
+        let run_result = tauri::async_runtime::spawn_blocking(move || {
+            run_detective(&path, project_bpm)
+        }).await;
+
+        match run_result {
+            Ok(Ok(result)) => {
+                handle.emit("perfect_time_analyzed", DetectiveEventPayload {
+                    job_id,
+                    stem_path: path_clone,
+                    status: "success".to_string(),
+                    result: Some(result),
+                    error: None,
+                }).ok();
+            }
+            Ok(Err(err)) => {
+                handle.emit("perfect_time_analyzed", DetectiveEventPayload {
+                    job_id,
+                    stem_path: path_clone,
+                    status: "error".to_string(),
+                    result: None,
+                    error: Some(err),
+                }).ok();
+            }
+            Err(join_err) => {
+                handle.emit("perfect_time_analyzed", DetectiveEventPayload {
+                    job_id,
+                    stem_path: path_clone,
+                    status: "error".to_string(),
+                    result: None,
+                    error: Some(format!("Thread join error: {}", join_err)),
+                }).ok();
+            }
+        }
+    });
+
+    Ok(JobQueued {
+        job_id,
+        status: "queued".to_string(),
+    })
 }

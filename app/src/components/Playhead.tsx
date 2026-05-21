@@ -1,14 +1,13 @@
-import { useRef } from 'react';
 import { useProjectStore } from '../store/projectStore';
-import { BEAT_WIDTH_PX } from '../utils/constants';
 import { PLAYHEAD_ID } from '../engine/playheadDOM';
 import './Playhead.css';
 
 export function Playhead() {
-  // Lê UMA VEZ no mount — sem inscrição no Zustand.
-  // Depois disso, o DOM é controlado exclusivamente por updatePlayheadDOM().
-  const initialBeat = useRef(useProjectStore.getState().playheadBeat);
-  const x = initialBeat.current * BEAT_WIDTH_PX;
+  // Se inscreve apenas no pixelsPerBeat (zoom).
+  // Quando o zoom muda, reposicionamos a agulha com base no beat atual da memória.
+  const pixelsPerBeat = useProjectStore((s) => s.pixelsPerBeat);
+  const currentBeat = useProjectStore.getState().playheadBeat;
+  const x = currentBeat * pixelsPerBeat;
 
   return (
     <div

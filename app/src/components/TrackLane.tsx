@@ -1,11 +1,11 @@
 import { useMemo, useCallback } from 'react';
 import type { Track } from '../types/project';
 import { useStemStore } from '../store/stemStore';
+import { useProjectStore } from '../store/projectStore';
 import { useStemDrop } from '../hooks/useStemDrop';
 import { WaveformCanvas } from './WaveformCanvas';
 import { pickAudioFile, loadStemFromPath } from '../engine/stemLoader';
 import {
-  BEAT_WIDTH_PX,
   BEATS_PER_BAR,
   TOTAL_ARRANGEMENT_BEATS,
   TRACK_LANE_HEIGHT_PX,
@@ -17,26 +17,28 @@ interface TrackLaneProps {
   readonly index: number;
 }
 
-function useBeatLines() {
+function useBeatLines(pixelsPerBeat: number) {
   return useMemo(() => {
     const lines: { position: number; isBar: boolean }[] = [];
     for (let beat = 0; beat < TOTAL_ARRANGEMENT_BEATS; beat++) {
       lines.push({
-        position: beat * BEAT_WIDTH_PX,
+        position: beat * pixelsPerBeat,
         isBar: beat % BEATS_PER_BAR === 0,
       });
     }
     return lines;
-  }, []);
+  }, [pixelsPerBeat]);
 }
 
 export function TrackLane({ track, index }: TrackLaneProps) {
-  const beatLines = useBeatLines();
+  const pixelsPerBeat = useProjectStore((s) => s.pixelsPerBeat);
+  const beatLines = useBeatLines(pixelsPerBeat);
   const parity = index % 2 === 0 ? 'even' : 'odd';
-  const totalWidth = TOTAL_ARRANGEMENT_BEATS * BEAT_WIDTH_PX;
+  const totalWidth = TOTAL_ARRANGEMENT_BEATS * pixelsPerBeat;
 
   const stem = useStemStore((s) => s.stems[track.id]);
   const setStem = useStemStore((s) => s.setStem);
+  const bpm = useProjectStore((s) => s.project.bpm);
   const { onDragOver, onDrop } = useStemDrop(track.id);
 
   const handleLoad = useCallback(async () => {
@@ -51,13 +53,17 @@ export function TrackLane({ track, index }: TrackLaneProps) {
   }, [track.id, setStem]);
 
   const hasStem = !!stem;
+  const stemWidthPx = hasStem ? (stem.durationSecs * bpm / 60) * pixelsPerBeat : 0;
 
   return (
     <div
       className={`track-lane track-lane--${parity} ${track.muted ? 'track-lane--muted' : ''} ${hasStem ? 'track-lane--loaded' : 'track-lane--empty'}`}
       id={`track-lane-${track.id}`}
       data-track-id={track.id}
-      style={{ minWidth: totalWidth }}
+      style={{
+        minWidth: totalWidth,
+        ['--track-color' as any]: track.color,
+      }}
       onDragOver={onDragOver}
       onDrop={onDrop}
     >
@@ -83,11 +89,12 @@ export function TrackLane({ track, index }: TrackLaneProps) {
       </div>
 
       {hasStem ? (
-        <div className="track-lane__waveform">
+        <div className="track-lane__waveform" style={{ width: stemWidthPx, right: 'auto' }}>
           <WaveformCanvas
             peaks={stem.peaks}
             color={track.color}
-            height={TRACK_LANE_HEIGHT_PX - 4}
+            height={TRACK_LANE_HEIGHT_PX - 8}
+            width={stemWidthPx}
           />
           <div className="track-lane__stem-meta">
             <span className="track-lane__stem-name">

@@ -1,5 +1,7 @@
 mod audio;
 mod dsp;
+mod dsp_primitives;
+mod detective;
 mod commands;
 mod playback;
 
@@ -17,6 +19,7 @@ pub fn run() {
             commands::ingest_stem,
             commands::analyze_project,
             commands::get_waveform_peaks,
+            commands::perfect_time_analyze,
             // Playback nativo (rodio / cpal / WASAPI)
             commands::pb_play,
             commands::pb_pause,

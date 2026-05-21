@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { FrequencyConflict, GainStagingResult } from '../engine/types';
+import type { FrequencyConflict, GainStagingResult, DetectiveResult } from '../engine/types';
 
 export interface StemData {
   trackId: string;
@@ -11,6 +11,8 @@ export interface StemData {
   peaks: [number, number][];
   rmsDb: number;
   peakDb: number;
+  detectiveResult?: DetectiveResult;
+  processingState?: 'idle' | 'queued' | 'analyzing' | 'awaiting_anchors' | 'processed';
 }
 
 export type AnalysisStatus = 'idle' | 'running' | 'done' | 'error';
@@ -29,6 +31,8 @@ interface StemState {
   removeStem: (trackId: string) => void;
   setAnalysisResult: (conflicts: FrequencyConflict[], gainStaging: GainStagingResult[]) => void;
   setAnalysisStatus: (status: AnalysisStatus, error?: string) => void;
+  setStemDetectiveResult: (trackId: string, result: DetectiveResult) => void;
+  setStemProcessingState: (trackId: string, state: 'idle' | 'queued' | 'analyzing' | 'awaiting_anchors' | 'processed') => void;
 }
 
 export const useStemStore = create<StemState>((set) => ({
@@ -54,4 +58,28 @@ export const useStemStore = create<StemState>((set) => ({
 
   setAnalysisStatus: (status, error) =>
     set({ analysisStatus: status, analysisError: error ?? null }),
+
+  setStemDetectiveResult: (trackId, result) =>
+    set((state) => {
+      const stem = state.stems[trackId];
+      if (!stem) return {};
+      return {
+        stems: {
+          ...state.stems,
+          [trackId]: { ...stem, detectiveResult: result },
+        },
+      };
+    }),
+
+  setStemProcessingState: (trackId, processingState) =>
+    set((state) => {
+      const stem = state.stems[trackId];
+      if (!stem) return {};
+      return {
+        stems: {
+          ...state.stems,
+          [trackId]: { ...stem, processingState },
+        },
+      };
+    }),
 }));

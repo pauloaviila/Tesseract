@@ -5,7 +5,7 @@
  * A agulha precisa de movimento contínuo e suave; passar por setState a
  * cada rAF tick significaria re-renders desnecessários de todo o sub-tree.
  */
-import { BEAT_WIDTH_PX } from '../utils/constants';
+import { useProjectStore } from '../store/projectStore';
 
 const PLAYHEAD_ID = 'playhead-needle';
 
@@ -20,7 +20,10 @@ function getEl(): HTMLElement | null {
 
 export function updatePlayheadDOM(beat: number): void {
   const el = getEl();
-  if (el) el.style.transform = `translateX(${beat * BEAT_WIDTH_PX}px)`;
+  if (el) {
+    const pixelsPerBeat = useProjectStore.getState().pixelsPerBeat;
+    el.style.transform = `translateX(${beat * pixelsPerBeat}px)`;
+  }
 }
 
 export { PLAYHEAD_ID };

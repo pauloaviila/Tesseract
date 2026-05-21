@@ -1,9 +1,7 @@
 import { useMemo } from 'react';
 import { useProjectStore } from '../store/projectStore';
 import {
-  BEAT_WIDTH_PX,
   TOTAL_ARRANGEMENT_BEATS,
-  TIMELINE_TOTAL_WIDTH_PX,
   beatsToSeconds,
   formatTime,
 } from '../utils/constants';
@@ -17,15 +15,15 @@ interface TimeTick {
 }
 
 /**
- * Calcula intervalos de tempo baseados no BPM.
+ * Calcula intervalos de tempo baseados no BPM e zoom (pixelsPerBeat).
  * Major ticks a cada 5 segundos, minor a cada 1 segundo.
  */
-function useTimeTicks(bpm: number): TimeTick[] {
+function useTimeTicks(bpm: number, pixelsPerBeat: number): TimeTick[] {
   return useMemo(() => {
     const ticks: TimeTick[] = [];
     const totalSeconds = beatsToSeconds(TOTAL_ARRANGEMENT_BEATS, bpm);
     const secondsPerBeat = 60 / bpm;
-    const pxPerSecond = BEAT_WIDTH_PX / secondsPerBeat;
+    const pxPerSecond = pixelsPerBeat / secondsPerBeat;
 
     for (let sec = 0; sec <= totalSeconds; sec++) {
       const isMajor = sec % 5 === 0;
@@ -37,23 +35,26 @@ function useTimeTicks(bpm: number): TimeTick[] {
       });
     }
     return ticks;
-  }, [bpm]);
+  }, [bpm, pixelsPerBeat]);
 }
 
 /**
  * Régua de tempo — exibe marcadores de tempo (mm:ss) ao longo da timeline.
  * Major ticks a cada 5 segundos com label. Minor ticks a cada segundo.
- * Calcula posições com base no BPM do projeto.
+ * Calcula posições com base no BPM e zoom do projeto.
  */
 export function TimeRuler() {
   const bpm = useProjectStore((s) => s.project.bpm);
-  const ticks = useTimeTicks(bpm);
+  const pixelsPerBeat = useProjectStore((s) => s.pixelsPerBeat);
+  const ticks = useTimeTicks(bpm, pixelsPerBeat);
+  
+  const timelineTotalWidthPx = TOTAL_ARRANGEMENT_BEATS * pixelsPerBeat;
 
   return (
     <div
       className="time-ruler"
       id="time-ruler"
-      style={{ minWidth: TIMELINE_TOTAL_WIDTH_PX }}
+      style={{ minWidth: timelineTotalWidthPx }}
     >
       {ticks.map((tick) => (
         <div

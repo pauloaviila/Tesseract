@@ -39,6 +39,7 @@ export function useAudioPlayback() {
 
   const rafRef      = useRef<number | null>(null);
   const syncRef     = useRef<ReturnType<typeof setInterval> | null>(null);
+  const isDraggingRef = useRef(false);
 
   // Âncora — refs, nunca state React
   const anchorSecs = useRef(0);
@@ -81,14 +82,12 @@ export function useAudioPlayback() {
     stopRaf();
     frameN.current = 0;
 
-    // FIX CRÍTICO: ancora anchorWall AGORA para que a primeira tick
-    // calcule deltaSecs = ~0 em vez de performance.now() inteiro
+    // Ancora o relógio da CPU exatamente no instante do startRaf.
+    // O anchorSecs.current já foi perfeitamente configurado no engine.play() ou seekTo()!
     anchorWall.current = performance.now();
-    // anchorSecs fica com o valor anterior (0 no play inicial) —
-    // syncAnchor() vai corrigi-lo logo nos próximos ms
-    syncAnchor();
-    syncRef.current = setInterval(syncAnchor, SYNC_INTERVAL_MS);
 
+    // Fire and Forget PURO: ignoramos o getPos() do Rust que devolve lixo/stale buffer
+    // logo após o Play. A CPU assume o comando 100%.
     const tick = () => {
       const deltaSecs = (performance.now() - anchorWall.current) / 1000;
       const posSecs   = anchorSecs.current + deltaSecs;
@@ -101,8 +100,9 @@ export function useAudioPlayback() {
 
       rafRef.current = requestAnimationFrame(tick);
     };
+    
     rafRef.current = requestAnimationFrame(tick);
-  }, [syncAnchor, setPlayhead, stopRaf]);
+  }, [setPlayhead, stopRaf]);
 
   // ── isPlaying → play / pause / stop ───────────────────────────────────
   useEffect(() => {
@@ -146,20 +146,36 @@ export function useAudioPlayback() {
   useEffect(() => () => stopRaf(), [stopRaf]);
 
   // ── Seek ───────────────────────────────────────────────────────────────
-  const seekTo = useCallback(async (beat: number) => {
+  const seekTo = useCallback(async (beat: number, isDragging = false) => {
     const clamped = Math.max(0, beat);
     const secs    = (clamped * 60) / bpmRef.current;
 
-    stopRaf();
+    // UI Feedback imediato, independente se está arrastando ou não
     updatePlayheadDOM(clamped);
     setPlayhead(clamped);
-
-    // Atualiza âncora imediatamente para o seek não piscar
     anchorSecs.current = secs;
     anchorWall.current = performance.now();
 
-    await engine.seekTo(secs);
-    if (isPlayingRef.current) startRaf();
+    if (isDragging) {
+      if (!isDraggingRef.current) {
+        isDraggingRef.current = true;
+        stopRaf(); // Para a UI de brigar com o mouse
+        if (isPlayingRef.current) {
+          engine.pause().catch(console.error);
+        }
+      }
+    } else {
+      isDraggingRef.current = false;
+      stopRaf();
+      
+      if (isPlayingRef.current) {
+        engine.play(secs).catch(console.error);
+        // Só reinicia o RAF se ainda estivermos no estado final deste seek
+        if (!isDraggingRef.current) startRaf();
+      } else {
+        engine.seekTo(secs).catch(console.error);
+      }
+    }
   }, [setPlayhead, startRaf, stopRaf]);
 
   return { seekTo };

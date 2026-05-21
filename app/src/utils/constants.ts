@@ -8,12 +8,6 @@ export const BEATS_PER_BAR = 4;
 export const BARS_PER_SECTION = 8;
 export const BEATS_PER_SECTION = BEATS_PER_BAR * BARS_PER_SECTION;
 
-/** Largura visual de cada batida no grid (px) */
-export const BEAT_WIDTH_PX = 12;
-
-/** Largura de um compasso inteiro no grid (px) */
-export const BAR_WIDTH_PX = BEAT_WIDTH_PX * BEATS_PER_BAR;
-
 /** Altura de cada lane de track (px) — compatível com track items do painel */
 export const TRACK_LANE_HEIGHT_PX = 80;
 
@@ -25,9 +19,6 @@ export const TOTAL_ARRANGEMENT_BEATS = BEATS_PER_SECTION * 6;
 
 /** Total de compassos na timeline */
 export const TOTAL_BARS = TOTAL_ARRANGEMENT_BEATS / BEATS_PER_BAR;
-
-/** Largura total da timeline em px */
-export const TIMELINE_TOTAL_WIDTH_PX = TOTAL_ARRANGEMENT_BEATS * BEAT_WIDTH_PX;
 
 /** Intervalo de marcação de compassos na régua (a cada N compassos) */
 export const BAR_RULER_MAJOR_INTERVAL = 8;

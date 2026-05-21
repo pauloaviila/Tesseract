@@ -68,6 +68,12 @@ interface ProjectState {
 
   /** Atualiza posição do playhead (chamado pelo engine de áudio via rAF) */
   setPlayheadBeat: (beat: number) => void;
+
+  /** Largura visual de cada beat (zoom) */
+  pixelsPerBeat: number;
+
+  /** Altera o nível de zoom */
+  setZoom: (newZoom: number) => void;
 }
 
 export const useProjectStore = create<ProjectState>((set, get) => ({
@@ -75,6 +81,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
   isPlaying: false,
   playheadBeat: 0,
   selectedTrackIds: [],
+  pixelsPerBeat: 48, // valor padrão inicial (48px por batida)
 
   toggleMute: (trackId) =>
     set((state) => ({
@@ -199,4 +206,9 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
 
   setPlayheadBeat: (beat) =>
     set({ playheadBeat: beat }),
+
+  setZoom: (newZoom) =>
+    set({
+      pixelsPerBeat: Math.max(12, Math.min(300, newZoom)), // Limita o zoom entre 12px e 300px
+    }),
 }));

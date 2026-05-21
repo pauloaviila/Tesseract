@@ -14,6 +14,19 @@ async function invoke<T>(cmd: string, args?: Record<string, unknown>): Promise<T
   return browserStub(cmd, args) as T;
 }
 
+// ── Command Bus Global (Fila blindada contra React lifecycle) ───────────────
+let commandBus: Promise<any> = Promise.resolve();
+
+function queueCommand<T>(cmd: string, args?: Record<string, unknown>): Promise<T> {
+  commandBus = commandBus
+    .then(() => invoke<T>(cmd, args))
+    .catch((err) => {
+      console.error(`[Tesseract] Falha fatal no comando IPC ${cmd}:`, err);
+      throw err;
+    });
+  return commandBus as Promise<T>;
+}
+
 // ── Stubs browser dev ─────────────────────────────────────────────────────────
 let _sSecs = 0, _sPlaying = false, _sWall = 0;
 
@@ -50,11 +63,13 @@ export interface PlayheadInfo {
   is_playing: boolean;
 }
 
-export const play    = (offsetSecs: number) => invoke<void>('pb_play',   { offsetSecs });
-export const pause   = ()                    => invoke<void>('pb_pause');
-export const resume  = ()                    => invoke<void>('pb_resume');
-export const stop    = ()                    => invoke<void>('pb_stop');
-export const seekTo  = (secs: number)        => invoke<void>('pb_seek',   { secs });
+export const play    = (offsetSecs: number) => queueCommand<void>('pb_play',   { offsetSecs });
+export const pause   = ()                    => queueCommand<void>('pb_pause');
+export const resume  = ()                    => queueCommand<void>('pb_resume');
+export const stop    = ()                    => queueCommand<void>('pb_stop');
+export const seekTo  = (secs: number)        => queueCommand<void>('pb_seek',   { secs });
+
+// getPos roda 20x por segundo, fica FORA da fila para não criar engarrafamento de leitura
 export const getPos  = ()                    => invoke<PlayheadInfo>('pb_get_pos');
 export const setVolume = (trackId: string, volume: number) =>
   invoke<void>('pb_set_volume', { trackId, volume });
