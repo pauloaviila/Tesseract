@@ -2,7 +2,7 @@
  * Thin wrapper around Tauri invoke — falls back to stubs in browser dev mode
  * so the React UI works with `npm run dev` without the Tauri shell.
  */
-import type { FrequencyConflict, GainStagingResult, JobQueued, DetectiveResult } from './types';
+import type { FrequencyConflict, GainStagingResult, JobQueued, DetectiveResult, AnchorPoint } from './types';
 
 const IS_TAURI =
   typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
@@ -24,6 +24,7 @@ function browserStub(cmd: string, args?: Record<string, unknown>): unknown {
   if (cmd === 'get_waveform_peaks') return STUB_PEAKS;
   if (cmd === 'analyze_project') return STUB_ANALYSIS;
   if (cmd === 'perfect_time_analyze') return { job_id: 123, status: 'queued' };
+  if (cmd === 'perfect_time_process') return { job_id: 124, status: 'queued' };
   return null;
 }
 
@@ -94,4 +95,13 @@ export async function perfectTimeAnalyze(
   projectBpm: number,
 ): Promise<JobQueued> {
   return invoke('perfect_time_analyze', { stemPath, projectBpm });
+}
+
+export async function perfectTimeProcess(
+  stemPath: string,
+  projectBpm: number,
+  anchors: AnchorPoint[] | null,
+  detectiveResult: DetectiveResult,
+): Promise<JobQueued> {
+  return invoke('perfect_time_process', { stemPath, projectBpm, anchors, detectiveResult });
 }

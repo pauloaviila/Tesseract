@@ -38,3 +38,31 @@ export interface DetectiveEventPayload {
   result: DetectiveResult | null;
   error: string | null;
 }
+
+export interface AnchorPoint {
+  time_ms: number;
+  beat: number;
+}
+
+export interface ArchitectSuggestion {
+  suggested_beat: number;
+  suggested_bar: number;
+  confidence: number;
+  collision_warning: boolean;
+  collision_element_id: string | null;
+}
+
+export interface PerfectTimeResult {
+  output_path: string;
+  stretch_ratio: number;
+  method_used: 'Slicing' | 'PhaseVocoder';
+  architect_suggestion: ArchitectSuggestion;
+}
+
+export interface ProcessedEventPayload {
+  job_id: number;
+  stem_path: string;
+  status: string;
+  result: PerfectTimeResult | null;
+  error: string | null;
+}

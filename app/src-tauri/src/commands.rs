@@ -2,11 +2,13 @@ use std::path::Path;
 use serde::{Deserialize, Serialize};
 use tauri::command;
 use tauri::Emitter;
+use tauri::Manager;
 
 use crate::audio::{decode_file, to_mono, compute_peaks};
 use crate::dsp::{stft, detect_conflicts, measure_levels, gain_for_target_peak, FrequencyConflict, StemSpec};
 use crate::playback::PlaybackEngine;
 use crate::detective::{run_detective, DetectiveResult};
+use crate::slicer::{AnchorPoint, PerfectTimeResult, process_slicing as run_slicing};
 use std::sync::atomic::{AtomicU32, Ordering};
 
 const FFT_SIZE: usize = 2048;
@@ -262,4 +264,82 @@ pub async fn perfect_time_analyze(
         job_id,
         status: "queued".to_string(),
     })
+}
+
+#[derive(Serialize, Clone)]
+pub struct ProcessedEventPayload {
+    pub job_id: u32,
+    pub stem_path: String,
+    pub status: String,
+    pub result: Option<PerfectTimeResult>,
+    pub error: Option<String>,
+}
+
+#[command]
+pub async fn perfect_time_process(
+    stem_path: String,
+    project_bpm: f64,
+    anchors: Option<Vec<AnchorPoint>>,
+    detective_result: DetectiveResult,
+    app: tauri::AppHandle,
+) -> Result<JobQueued, String> {
+    let job_id = NEXT_JOB_ID.fetch_add(1, Ordering::SeqCst);
+    let handle = app.clone();
+    
+    tauri::async_runtime::spawn(async move {
+        let path = stem_path.clone();
+        let path_clone = stem_path.clone();
+        
+        let cache_dir = handle.path().app_cache_dir().unwrap_or_else(|_| std::env::temp_dir());
+        std::fs::create_dir_all(&cache_dir).ok();
+
+        let run_result = tauri::async_runtime::spawn_blocking(move || {
+            run_slicing(&path, project_bpm, anchors, &detective_result, &cache_dir)
+        }).await;
+
+        match run_result {
+            Ok(Ok(result)) => {
+                handle.emit("perfect_time_processed", ProcessedEventPayload {
+                    job_id,
+                    stem_path: path_clone,
+                    status: "success".to_string(),
+                    result: Some(result),
+                    error: None,
+                }).ok();
+            }
+            Ok(Err(err)) => {
+                handle.emit("perfect_time_processed", ProcessedEventPayload {
+                    job_id,
+                    stem_path: path_clone,
+                    status: "error".to_string(),
+                    result: None,
+                    error: Some(err),
+                }).ok();
+            }
+            Err(join_err) => {
+                handle.emit("perfect_time_processed", ProcessedEventPayload {
+                    job_id,
+                    stem_path: path_clone,
+                    status: "error".to_string(),
+                    result: None,
+                    error: Some(format!("Thread join error: {}", join_err)),
+                }).ok();
+            }
+        }
+    });
+
+    Ok(JobQueued {
+        job_id,
+        status: "queued".to_string(),
+    })
+}
+
+#[command]
+pub fn pb_register_stem(
+    track_id: String,
+    file_path: String,
+    engine: tauri::State<PlaybackEngine>,
+) -> Result<(), String> {
+    engine.register_stem(track_id, file_path, 1.0);
+    Ok(())
 }

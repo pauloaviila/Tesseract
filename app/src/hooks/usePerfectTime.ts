@@ -2,36 +2,77 @@ import { useEffect } from 'react';
 import { listen } from '@tauri-apps/api/event';
 import { useStemStore } from '../store/stemStore';
 import { useProjectStore } from '../store/projectStore';
-import { perfectTimeAnalyze } from '../engine/tauri';
-import type { DetectiveEventPayload } from '../engine/types';
+import { perfectTimeAnalyze, perfectTimeProcess } from '../engine/tauri';
+import type { DetectiveEventPayload, ProcessedEventPayload } from '../engine/types';
+import { pbRegisterStem } from '../engine/audioEngine';
 
 const IS_TAURI =
   typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
+
+export function clearTrackWarp(trackId: string) {
+  const stem = useStemStore.getState().stems[trackId];
+  if (!stem) return;
+  useStemStore.getState().clearStemPerfectTimeResult(trackId);
+  pbRegisterStem(trackId, stem.filePath);
+}
+
+export async function triggerPerfectTimeProcess(trackId: string, projectBpm: number) {
+  const stem = useStemStore.getState().stems[trackId];
+  if (!stem || !stem.detectiveResult) return;
+  
+  useStemStore.getState().setStemProcessingState(trackId, 'analyzing');
+  
+  if (!IS_TAURI) {
+    console.log(`[PerfectTime] Mocking browser warp process for track: ${trackId}`);
+    setTimeout(() => {
+      useStemStore.getState().setStemPerfectTimeResult(trackId, {
+        output_path: stem.filePath,
+        stretch_ratio: 1.0,
+        method_used: 'Slicing',
+        architect_suggestion: {
+          suggested_beat: 0,
+          suggested_bar: 0,
+          confidence: stem.detectiveResult?.confidence ?? 1.0,
+          collision_warning: false,
+          collision_element_id: null,
+        }
+      });
+    }, 1000);
+    return;
+  }
+  
+  try {
+    await perfectTimeProcess(stem.filePath, projectBpm, stem.anchors ?? null, stem.detectiveResult);
+  } catch (err) {
+    console.error('[PerfectTime] Erro ao chamar perfectTimeProcess:', err);
+    useStemStore.getState().setStemProcessingState(trackId, stem.detectiveResult.requires_manual_anchors ? 'awaiting_anchors' : 'idle');
+  }
+}
 
 export function usePerfectTime() {
   const stems = useStemStore((s) => s.stems);
   const setStemDetectiveResult = useStemStore((s) => s.setStemDetectiveResult);
   const setStemProcessingState = useStemStore((s) => s.setStemProcessingState);
+  const setStemPerfectTimeResult = useStemStore((s) => s.setStemPerfectTimeResult);
   const projectBpm = useProjectStore((s) => s.project.bpm);
 
-  // 1. Escuta de eventos concluídos do backend Tauri
+  // 1. Escuta de eventos concluídos do backend Tauri (Análise e Processamento)
   useEffect(() => {
     if (!IS_TAURI) return;
 
-    let unlisten: (() => void) | undefined;
+    let unlistenAnalyze: (() => void) | undefined;
+    let unlistenProcess: (() => void) | undefined;
 
-    const setupListener = async () => {
-      unlisten = await listen<DetectiveEventPayload>('perfect_time_analyzed', (event) => {
+    const setupListeners = async () => {
+      unlistenAnalyze = await listen<DetectiveEventPayload>('perfect_time_analyzed', (event) => {
         const payload = event.payload;
         console.log('[PerfectTime] Evento de análise recebido:', payload);
 
-        // Acessa o estado mais recente para evitar recriação de efeito
         const currentStems = useStemStore.getState().stems;
         const trackId = Object.keys(currentStems).find(
           (id) => currentStems[id]?.filePath === payload.stem_path
         );
 
-        // Fail-safe: se a stem foi removida pelo usuário durante a análise, ignora a injeção
         if (!trackId || !currentStems[trackId]) {
           console.warn('[PerfectTime] Análise concluída, mas a stem foi deletada. Ignorando.');
           return;
@@ -39,23 +80,68 @@ export function usePerfectTime() {
 
         if (payload.status === 'success' && payload.result) {
           setStemDetectiveResult(trackId, payload.result);
+          
+          // Inicializa âncoras baseadas nos transientes detectados
+          const bpm = useProjectStore.getState().project.bpm;
+          const initialAnchors = payload.result.transients_ms.map((tMs) => {
+            const beat = (tMs / 1000) * (bpm / 60);
+            return {
+              time_ms: tMs,
+              beat: Math.round(beat * 8) / 8, // snap to 1/8 beat
+            };
+          });
+          useStemStore.getState().setStemAnchors(trackId, initialAnchors);
+
           const nextState = payload.result.requires_manual_anchors
             ? 'awaiting_anchors'
             : 'processed';
+          
           setStemProcessingState(trackId, nextState);
+          
+          // Se não precisa de âncoras manuais, já dispara o processamento automático
+          if (!payload.result.requires_manual_anchors) {
+            triggerPerfectTimeProcess(trackId, bpm);
+          }
         } else {
           console.error('[PerfectTime] Erro de análise do Detetive para a track:', trackId, payload.error);
           setStemProcessingState(trackId, 'idle');
         }
       });
+
+      unlistenProcess = await listen<ProcessedEventPayload>('perfect_time_processed', (event) => {
+        const payload = event.payload;
+        console.log('[PerfectTime] Evento de processamento recebido:', payload);
+
+        const currentStems = useStemStore.getState().stems;
+        const trackId = Object.keys(currentStems).find(
+          (id) => currentStems[id]?.filePath === payload.stem_path
+        );
+
+        if (!trackId || !currentStems[trackId]) {
+          console.warn('[PerfectTime] Processamento concluído, mas a stem foi deletada. Ignorando.');
+          return;
+        }
+
+        if (payload.status === 'success' && payload.result) {
+          setStemPerfectTimeResult(trackId, payload.result);
+          pbRegisterStem(trackId, payload.result.output_path);
+        } else {
+          console.error('[PerfectTime] Erro de processamento para a track:', trackId, payload.error);
+          setStemProcessingState(
+            trackId,
+            currentStems[trackId].detectiveResult?.requires_manual_anchors ? 'awaiting_anchors' : 'idle'
+          );
+        }
+      });
     };
 
-    setupListener().catch(console.error);
+    setupListeners().catch(console.error);
 
     return () => {
-      if (unlisten) unlisten();
+      if (unlistenAnalyze) unlistenAnalyze();
+      if (unlistenProcess) unlistenProcess();
     };
-  }, [setStemDetectiveResult, setStemProcessingState]);
+  }, [setStemDetectiveResult, setStemProcessingState, setStemPerfectTimeResult]);
 
   // 2. Scheduler e Acionador automático com limite de concorrência (max 2)
   useEffect(() => {

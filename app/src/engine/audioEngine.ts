@@ -75,3 +75,5 @@ export const setVolume = (trackId: string, volume: number) =>
   invoke<void>('pb_set_volume', { trackId, volume });
 export const setMuted  = (trackId: string, muted: boolean) =>
   invoke<void>('pb_set_muted',  { trackId, muted });
+export const pbRegisterStem = (trackId: string, filePath: string) =>
+  queueCommand<void>('pb_register_stem', { trackId, filePath });

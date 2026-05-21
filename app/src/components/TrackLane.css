@@ -194,3 +194,145 @@
 .track-lane__replace-btn:hover {
   color: var(--accent-fx);
 }
+
+/* ============================================================
+   Warp Markers UI (Fase 3 & 4)
+   ============================================================ */
+
+.track-lane__warp-marker-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.track-lane__warp-marker-orig {
+  position: absolute;
+  top: 0;
+  width: 2px;
+  height: 100%;
+  background-color: var(--accent-kick); /* Linha vermelha no transient original */
+  box-shadow: 0 0 6px rgba(255, 87, 87, 0.7);
+  z-index: 10;
+}
+
+.track-lane__warp-marker-target {
+  position: absolute;
+  top: 0;
+  width: 14px;
+  height: 100%;
+  margin-left: -7px;
+  pointer-events: all;
+  cursor: col-resize;
+  z-index: 12;
+}
+
+.track-lane__warp-marker-handle {
+  position: absolute;
+  top: 2px;
+  left: 1px;
+  width: 12px;
+  height: 12px;
+  background-color: #ffd369; /* Amarelo premium */
+  border-radius: 3px;
+  border: 1px solid #222831;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+  transition: transform var(--transition-fast), background-color var(--transition-fast);
+}
+
+.track-lane__warp-marker-target:hover .track-lane__warp-marker-handle {
+  transform: scale(1.25);
+  background-color: #eeeeee;
+}
+
+.track-lane__warp-marker-bridge {
+  position: absolute;
+  top: 7px;
+  height: 2px;
+  background: repeating-linear-gradient(
+    90deg,
+    #ffd369,
+    #ffd369 4px,
+    transparent 4px,
+    transparent 8px
+  );
+  opacity: 0.8;
+  z-index: 9;
+}
+
+.track-lane__warp-marker-line-target {
+  position: absolute;
+  top: 0;
+  left: 6px;
+  width: 1px;
+  height: 100%;
+  border-left: 1px dashed #ffd369;
+  opacity: 0.65;
+}
+
+.track-lane__pt-badge {
+  font-size: 9px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.track-lane__pt-badge--success {
+  background-color: rgba(46, 204, 113, 0.2);
+  color: #2ecc71;
+  border: 1px solid rgba(46, 204, 113, 0.4);
+}
+
+.track-lane__pt-badge--awaiting {
+  background-color: rgba(241, 196, 15, 0.2);
+  color: #f1c40f;
+  border: 1px solid rgba(241, 196, 15, 0.4);
+}
+
+.track-lane__pt-badge--loading {
+  background-color: rgba(52, 152, 219, 0.2);
+  color: #3498db;
+  border: 1px solid rgba(52, 152, 219, 0.4);
+}
+
+.track-lane__warp-controls {
+  pointer-events: all;
+  display: flex;
+  gap: 4px;
+  margin-left: 8px;
+}
+
+.track-lane__warp-btn {
+  font-size: 9px;
+  padding: 2px 6px;
+  border-radius: 3px;
+  cursor: pointer;
+  font-weight: 600;
+  border: 1px solid var(--border-strong);
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-secondary);
+  transition: all var(--transition-fast);
+}
+
+.track-lane__warp-btn:hover {
+  background: var(--hover-overlay);
+  color: var(--text-primary);
+  border-color: var(--text-secondary);
+}
+
+.track-lane__warp-btn--primary {
+  background: #2ecc71;
+  color: #000;
+  border-color: #2ecc71;
+}
+
+.track-lane__warp-btn--primary:hover {
+  background: #27ae60;
+  color: #000;
+  border-color: #27ae60;
+}
+

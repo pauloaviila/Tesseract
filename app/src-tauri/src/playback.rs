@@ -71,7 +71,12 @@ impl PlaybackEngine {
     // ── Stem management ───────────────────────────────────────────────────────
 
     pub fn register_stem(&self, track_id: String, path: String, volume: f32) {
-        self.stems.lock().unwrap().insert(track_id, StemEntry { path, volume, muted: false });
+        let mut stems = self.stems.lock().unwrap();
+        if let Some(entry) = stems.get_mut(&track_id) {
+            entry.path = path;
+        } else {
+            stems.insert(track_id, StemEntry { path, volume, muted: false });
+        }
     }
 
     pub fn set_volume(&self, track_id: &str, v: f32) {
